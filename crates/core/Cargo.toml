@@ -1,0 +1,17 @@
+[package]
+name = "exif-cleaner-core"
+description = "Strip photoshop:DocumentAncestors from PSD/PSB files and their embedded smart objects without Photoshop"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+thiserror = { workspace = true }
+roxmltree = { workspace = true }
+blake3 = { workspace = true }
+serde = { workspace = true }
+trash = "5"
