@@ -211,7 +211,11 @@ fn truncated_and_corrupted_files_never_panic() {
 #[test]
 fn events_report_the_tree() {
     let mut names = Vec::new();
-    let mut f = |e: &crate::Event| names.push(format!("{e:?}"));
+    let mut f = |e: &crate::Event| {
+        if !matches!(e, crate::Event::Progress { .. }) {
+            names.push(format!("{e:?}"))
+        }
+    };
     let mut c = Cleaner::new(Options::default()).with_events(&mut f);
     c.clean(&tree(false)).unwrap();
     drop(c);

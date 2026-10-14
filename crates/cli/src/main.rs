@@ -133,7 +133,7 @@ fn main() -> ExitCode {
             match e {
                 Event::Enter { depth, name } => eprintln!("{}[{name}]", "  ".repeat(*depth)),
                 Event::Shared { depth, name } => eprintln!("{}[{name}] (same content as one already cleaned)", "  ".repeat(*depth)),
-                Event::Leave { .. } => {}
+                Event::Leave { .. } | Event::Progress { .. } => {}
             }
         };
         if !args.json {

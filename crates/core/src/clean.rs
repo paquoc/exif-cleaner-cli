@@ -58,6 +58,9 @@ pub enum Event {
     Leave { depth: usize, name: String, ancestors: usize, changed: bool },
     /// An identical smart object was already cleaned; its result is reused.
     Shared { depth: usize, name: String },
+    /// Share of the top document processed so far (0..1), by the byte position of the last
+    /// top-level smart object finished.
+    Progress { fraction: f64 },
 }
 
 /// One cleaning run over a top-level document.
@@ -173,6 +176,10 @@ impl<'a> Cleaner<'a> {
                         c
                     }
                 };
+                if depth == 0 && !bytes.is_empty() {
+                    let fraction = (block.data.start + e.payload.end) as f64 / bytes.len() as f64;
+                    self.emit(Event::Progress { fraction: fraction.min(1.0) });
+                }
                 if let Some(c) = cleaned {
                     replacements.push((e, c));
                 }
