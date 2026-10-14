@@ -1,4 +1,4 @@
-export type Original = "keep" | "trash" | "backup_folder";
+export type Original = "keep" | "trash" | "delete";
 
 export type FileStatus = "queued" | "idle" | "running" | "cleaned" | "already_clean" | "missing" | "failed" | "cancelled";
 
@@ -47,7 +47,7 @@ export interface Settings {
   keepStructure: boolean;
   suffix: string;
   moveOriginal: boolean;
-  originalTarget: Exclude<Original, "keep">;
+  originalTarget: "trash" | "delete";
 }
 
 export const DEFAULT_SETTINGS: Settings = {

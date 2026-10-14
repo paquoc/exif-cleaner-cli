@@ -1,4 +1,4 @@
-//! Exif Cleaner desktop app: a Tauri shell over `exif-cleaner-core`. The web UI lists files and
+//! Exif Cleaner PSD desktop app: a Tauri shell over `exif-cleaner-core`. The web UI lists files and
 //! options; this side scans folders, checks files, runs the cleaner on a worker thread and
 //! streams progress events back.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
@@ -149,10 +149,17 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(Runner::default())
+        .setup(|app| {
+            let title = format!("{} v{}", app.package_info().name, app.package_info().version);
+            if let Some(w) = app.get_webview_window("main") {
+                let _ = w.set_title(&title);
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![initial_paths, scan_paths, check_files, start_run, stop_run])
         .run(tauri::generate_context!());
     if let Err(e) = result {
-        eprintln!("exif cleaner failed to start: {e}");
+        eprintln!("Exif Cleaner PSD failed to start: {e}");
         std::process::exit(1);
     }
 }

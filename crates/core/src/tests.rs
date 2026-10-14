@@ -317,6 +317,20 @@ mod job {
         assert!(!c.path.exists());
         assert_eq!(fs::read(d.join("in").join("deep").join(BACKUP_DIR).join("c.psd")).unwrap(), input);
         assert_eq!(ancestors(&d.join("in").join("deep").join("c_clean.psd")), 0);
+
+        // New file + delete the original permanently.
+        fs::write(&c.path, &input).unwrap();
+        let r = run(c, Plan { output: Some(d.join("out").join("del.psd")), original: Original::Delete, ..Default::default() });
+        assert_eq!(r.status, Status::Cleaned, "{:?}", r.error);
+        assert!(!c.path.exists());
+        assert_eq!(r.original_moved_to.as_deref(), Some("deleted"));
+        assert_eq!(ancestors(&d.join("out").join("del.psd")), 0);
+
+        // Overwrite + delete: the original is simply replaced.
+        fs::write(&c.path, &input).unwrap();
+        let r = run(c, Plan { original: Original::Delete, ..Default::default() });
+        assert_eq!(r.status, Status::Cleaned, "{:?}", r.error);
+        assert_eq!(ancestors(&c.path), 0);
         let _ = fs::remove_dir_all(&d);
     }
 

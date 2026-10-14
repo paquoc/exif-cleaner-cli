@@ -1,4 +1,4 @@
-# exif-cleaner
+# Exif Cleaner PSD
 
 Xóa XMP `photoshop:DocumentAncestors` khỏi file PSD/PSB và mọi Smart Object PSD/PSB nhúng bên trong (đệ quy), không cần Photoshop. Thay thế cho `ExifCleanerPSD.jsx`.
 
@@ -14,16 +14,16 @@ target/release/exif-cleaner -n <file|folder>...             # dry-run: chỉ bá
 
 Tùy chọn: `--max-depth N` (mặc định 32), `-v` (in cây smart object), `--json`. Ctrl+C dừng sau bước hiện tại; file đang xử lý giữ nguyên.
 
-## App (Tauri 2 + Vite React)
+## App Exif Cleaner PSD (Tauri 2 + Vite React)
 
 ```sh
 cd app
 npm install
 npx tauri dev      # chạy thử
-npx tauri build    # ra target/release/exif-cleaner-app.exe và bộ cài target/release/bundle/nsis/
+npx tauri build    # ra target/release/exif-cleaner-psd.exe và bộ cài target/release/bundle/nsis/
 ```
 
-Thêm file/thư mục (nút, kéo thả, hoặc kéo file vào icon exe), bấm Chạy. Trước khi chạy app kiểm tra file còn tồn tại, file thiếu được báo và bỏ qua. Mỗi dòng hiện tiến độ riêng, nút Dừng ngừng sau bước hiện tại (file đang làm giữ nguyên). Panel Output: thư mục output hoặc cùng thư mục, giữ cấu trúc thư mục, chuyển file gốc vào Thùng rác hoặc `_exif_backup/`, hậu tố tên file. Cùng thư mục và không hậu tố nghĩa là ghi đè (app hỏi xác nhận nếu không chuyển file gốc đi).
+Thêm file/thư mục (nút, kéo thả, hoặc kéo file vào icon exe), bấm Chạy. Trước khi chạy app kiểm tra file còn tồn tại, file thiếu được báo và bỏ qua. Mỗi dòng hiện tiến độ riêng, nút Dừng ngừng sau bước hiện tại (file đang làm giữ nguyên). Panel Output: thư mục output hoặc cùng thư mục, giữ cấu trúc thư mục, file gốc vào Thùng rác hoặc xóa vĩnh viễn, hậu tố tên file. Cùng thư mục và không hậu tố nghĩa là ghi đè; app hỏi xác nhận trước khi ghi đè hoặc xóa vĩnh viễn.
 
 ## Cách hoạt động
 
@@ -35,3 +35,15 @@ Thêm file/thư mục (nút, kéo thả, hoặc kéo file vào icon exe), bấm 
 - Trước khi ghi: parse lại toàn bộ cây output, yêu cầu không lỗi và không còn ancestors. Ghi qua file tạm rồi rename. Nếu file bị sửa trên đĩa trong lúc clean thì không ghi.
 
 Cấu trúc tham khảo Adobe Photoshop File Formats Specification và photocraft-psd (MIT/Apache-2.0): danh sách key PSB 8-byte, cách dò padding của global block, layout `liFD`, các OSType của descriptor.
+
+## Phát hành
+
+Version nằm ở một chỗ duy nhất: `version` trong [Cargo.toml](Cargo.toml) (app, title cửa sổ và tên bộ cài đều lấy từ đây).
+
+```sh
+# sửa version trong Cargo.toml (và app/package.json cho khớp), commit, rồi:
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+GitHub Actions ([.github/workflows/release.yml](.github/workflows/release.yml)) build trên Windows, kiểm tra tag khớp version, chạy test, rồi tạo release kèm bộ cài, bản portable và CLI. Chạy tay (Actions > Release > Run workflow) để build thử mà không publish; file nằm trong artifact của lần chạy đó.

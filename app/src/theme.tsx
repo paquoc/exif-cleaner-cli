@@ -5,9 +5,9 @@ import { Monitor, Moon, Sun } from "lucide-react";
 export type ThemeMode = "system" | "light" | "dark";
 const KEY = "exif-cleaner.theme";
 const MODES: { mode: ThemeMode; label: string; Icon: typeof Sun }[] = [
-  { mode: "system", label: "Theo hệ thống", Icon: Monitor },
-  { mode: "light", label: "Sáng", Icon: Sun },
-  { mode: "dark", label: "Tối", Icon: Moon },
+  { mode: "system", label: "System", Icon: Monitor },
+  { mode: "light", label: "Light", Icon: Sun },
+  { mode: "dark", label: "Dark", Icon: Moon },
 ];
 
 function load(): ThemeMode {
@@ -43,7 +43,7 @@ export function ThemeSwitch() {
     }
   }, [mode]);
   return (
-    <div className="seg" role="radiogroup" aria-label="Giao diện">
+    <div className="seg" role="radiogroup" aria-label="Theme">
       {MODES.map(({ mode: m, label, Icon }) => (
         <button key={m} role="radio" aria-checked={mode === m} className={mode === m ? "on" : ""} title={label} onClick={() => setMode(m)}>
           <Icon size={15} />

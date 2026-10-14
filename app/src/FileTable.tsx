@@ -5,14 +5,14 @@ import { FolderOpen, Layers } from "lucide-react";
 import type { FileItem, FileStatus } from "./types";
 
 const STATUS_LABEL: Record<FileStatus, string> = {
-  idle: "Chờ",
-  queued: "Trong hàng đợi",
-  running: "Đang xử lý",
-  cleaned: "Đã clean",
-  already_clean: "Đã sạch sẵn",
-  missing: "Không tìm thấy",
-  failed: "Lỗi",
-  cancelled: "Đã dừng",
+  idle: "Pending",
+  queued: "Queued",
+  running: "Running",
+  cleaned: "Cleaned",
+  already_clean: "Already clean",
+  missing: "Not found",
+  failed: "Failed",
+  cancelled: "Stopped",
 };
 
 /** The second line under the file name: error, warning, smart object in progress, or folder. */
@@ -20,20 +20,20 @@ function subLine(f: FileItem): { text: string; cls: string } {
   const r = f.report;
   if (f.status === "running") return { text: f.current ? `› ${f.current}` : f.folder, cls: "sub-run" };
   if (r?.error) return { text: r.error, cls: "sub-err" };
-  if (f.status === "missing") return { text: "File không còn tồn tại trên đĩa", cls: "sub-err" };
-  if (r && r.stats.warnings.length > 0) return { text: `${r.stats.warnings.length} cảnh báo: ${r.stats.warnings[0]}`, cls: "sub-warn" };
-  if (r?.original_moved_to) return { text: `Bản gốc → ${r.original_moved_to}`, cls: "" };
+  if (f.status === "missing") return { text: "The file no longer exists", cls: "sub-err" };
+  if (r && r.stats.warnings.length > 0) return { text: `${r.stats.warnings.length} warning(s): ${r.stats.warnings[0]}`, cls: "sub-warn" };
+  if (r?.original_moved_to) return { text: r.original_moved_to === "deleted" ? "Original deleted" : `Original → ${r.original_moved_to}`, cls: "" };
   return { text: f.folder, cls: "" };
 }
 
 function tooltip(f: FileItem): string {
   const r = f.report;
   if (!r || !(r.status === "cleaned" || r.status === "already_clean")) return f.path;
-  const lines = [f.path, `Smart object: ${count(r.stats.smart_objects)} (${count(r.stats.shared_smart_objects)} trùng nội dung)`, `Ancestors đã xóa: ${count(r.stats.ancestors_removed)}`];
+  const lines = [f.path, `Smart objects: ${count(r.stats.smart_objects)} (${count(r.stats.shared_smart_objects)} with identical content)`, `Ancestors removed: ${count(r.stats.ancestors_removed)}`];
   const skipped = Object.entries(r.stats.skipped_types);
-  if (skipped.length) lines.push(`Bỏ qua (không phải PSD): ${skipped.map(([k, v]) => `${k} ×${v}`).join(", ")}`);
+  if (skipped.length) lines.push(`Skipped (not PSD/PSB): ${skipped.map(([k, v]) => `${k} ×${v}`).join(", ")}`);
   if (r.output && r.output !== f.path) lines.push(`Output: ${r.output}`);
-  if (r.original_moved_to) lines.push(`Bản gốc → ${r.original_moved_to}`);
+  if (r.original_moved_to) lines.push(r.original_moved_to === "deleted" ? "Original deleted" : `Original → ${r.original_moved_to}`);
   lines.push(...r.stats.warnings.map((w) => `⚠ ${w}`));
   return lines.join("\n");
 }
@@ -89,8 +89,8 @@ export function FileTable({ files, selected, onSelect, dragOver }: Props) {
     return (
       <div className={`empty ${dragOver ? "drag" : ""}`}>
         <Layers size={44} strokeWidth={1.3} />
-        <p className="empty-title">Kéo thả file PSD/PSB hoặc thư mục vào đây</p>
-        <p className="muted">hoặc dùng nút Thêm file / Thêm thư mục ở trên</p>
+        <p className="empty-title">Drop PSD/PSB files or folders here</p>
+        <p className="muted">or use Add files / Add folder above</p>
       </div>
     );
   }
@@ -100,13 +100,13 @@ export function FileTable({ files, selected, onSelect, dragOver }: Props) {
       <table className="files">
         <thead>
           <tr>
-            <th className="c-name">Tên</th>
-            <th className="c-size">Dung lượng</th>
-            <th className="c-size">Sau clean</th>
-            <th className="c-saved">Giảm</th>
-            <th className="c-time">Thời gian</th>
-            <th className="c-status">Trạng thái</th>
-            <th className="c-act" aria-label="Mở thư mục" />
+            <th className="c-name">Name</th>
+            <th className="c-size">Size</th>
+            <th className="c-size">Cleaned</th>
+            <th className="c-saved">Saved</th>
+            <th className="c-time">Time</th>
+            <th className="c-status">Status</th>
+            <th className="c-act" aria-label="Open folder" />
           </tr>
         </thead>
         <tbody>
@@ -128,7 +128,7 @@ export function FileTable({ files, selected, onSelect, dragOver }: Props) {
                   <Status f={f} />
                 </td>
                 <td className="c-act">
-                  <button className="icon-btn" title={r?.output && r.output !== f.path ? "Mở file output" : "Mở thư mục"} onClick={(e) => reveal(e, f)}>
+                  <button className="icon-btn" title={r?.output && r.output !== f.path ? "Show output file" : "Show in folder"} onClick={(e) => reveal(e, f)}>
                     <FolderOpen size={16} />
                   </button>
                 </td>

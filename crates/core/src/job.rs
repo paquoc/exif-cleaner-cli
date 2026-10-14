@@ -64,6 +64,8 @@ pub enum Original {
     Keep,
     /// Move it to the Recycle Bin / Trash.
     Trash,
+    /// Delete it permanently (when overwriting, it is simply replaced).
+    Delete,
     /// Move it to `_exif_backup/` next to it.
     BackupFolder,
 }
@@ -314,6 +316,10 @@ fn move_original(path: &Path, original: Original) -> Result<Option<String>> {
     match original {
         Original::Keep => Ok(None),
         Original::Trash => to_trash(path).map(|()| Some("Recycle Bin".into())),
+        Original::Delete => {
+            fs::remove_file(path).map_err(|e| Error::io(format!("cannot delete the original {}", path.display()), e))?;
+            Ok(Some("deleted".into()))
+        }
         Original::BackupFolder => {
             let b = backup_path(path)?;
             fs::rename(path, &b).or_else(|_| fs::copy(path, &b).and_then(|_| fs::remove_file(path))).map_err(|e| Error::io(format!("cannot move the original to {}", b.display()), e))?;
@@ -330,7 +336,8 @@ fn overwrite(path: &Path, bytes: &[u8], original: Original) -> Result<Option<Str
     let mut moved_to = None;
     let mut backup = None;
     match original {
-        Original::Keep => {}
+        // The rename below replaces (and so removes) the original.
+        Original::Keep | Original::Delete => {}
         Original::Trash => {
             if let Err(e) = to_trash(path) {
                 let _ = fs::remove_file(&tmp);
@@ -358,7 +365,7 @@ fn overwrite(path: &Path, bytes: &[u8], original: Original) -> Result<Option<Str
         if let Some(b) = &backup {
             let _ = fs::rename(b, path);
             let _ = fs::remove_file(&tmp);
-        } else if original == Original::Keep {
+        } else if matches!(original, Original::Keep | Original::Delete) {
             let _ = fs::remove_file(&tmp);
         }
         let kept = if original == Original::Trash { format!("; the original is in the Recycle Bin and the cleaned file is at {}", tmp.display()) } else { String::new() };

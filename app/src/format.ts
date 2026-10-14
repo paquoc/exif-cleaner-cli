@@ -13,7 +13,7 @@ export function percentSaved(before: number, after: number | null | undefined): 
 }
 
 export function count(n: number): string {
-  return n.toLocaleString("vi-VN");
+  return n.toLocaleString("en-US");
 }
 
 export function duration(ms: number): string {

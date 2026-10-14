@@ -21,6 +21,7 @@ function loadSettings(): Settings {
     for (const k of Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[]) {
       if (typeof saved[k] === typeof DEFAULT_SETTINGS[k]) (s as Record<string, unknown>)[k] = saved[k];
     }
+    if (s.originalTarget !== "trash" && s.originalTarget !== "delete") s.originalTarget = DEFAULT_SETTINGS.originalTarget;
     return s;
   } catch {
     return DEFAULT_SETTINGS;
@@ -38,7 +39,7 @@ interface RunState {
 }
 
 const IDLE: RunState = { running: false, stopping: false, total: 0, done: 0, current: "" };
-const APP = { title: "Exif Cleaner" };
+const APP = { title: "Exif Cleaner PSD" };
 
 export default function App() {
   const [files, setFiles] = useState<FileItem[]>([]);
@@ -80,7 +81,7 @@ export default function App() {
       if (paths.length === 0) return;
       const found = await scanPaths(paths);
       if (found.length === 0) {
-        await message("Không tìm thấy file .psd/.psb nào.", { title: APP.title, kind: "info" });
+        await message("No .psd/.psb files found.", { title: APP.title, kind: "info" });
         return;
       }
       addScanned(found);
@@ -152,7 +153,7 @@ export default function App() {
         const after = ok.reduce((a, r) => a + (r.size_after ?? r.size_before), 0);
         const failed = rs.filter((r) => r.status === "failed" || r.status === "missing").length;
         setSummary(
-          `${cancelled ? "Đã dừng" : "Xong"}: ${ok.length} file, giảm ${bytes(before - after)} (${bytes(before)} → ${bytes(after)})` + (failed ? ` • ${failed} file lỗi` : ""),
+          `${cancelled ? "Stopped" : "Done"}: ${ok.length} file${ok.length === 1 ? "" : "s"}, saved ${bytes(before - after)} (${bytes(before)} → ${bytes(after)})` + (failed ? ` • ${failed} failed` : ""),
         );
       },
     }).then((u) => (dead ? u() : (off = u)));
@@ -163,12 +164,12 @@ export default function App() {
   }, [patch]);
 
   const addFiles = async () => {
-    const picked = await open({ multiple: true, title: "Chọn file PSD/PSB", filters: [{ name: "Photoshop", extensions: ["psd", "psb"] }] });
+    const picked = await open({ multiple: true, title: "Add PSD/PSB files", filters: [{ name: "Photoshop", extensions: ["psd", "psb"] }] });
     if (picked) addPaths(Array.isArray(picked) ? picked : [picked]);
   };
 
   const addFolder = async () => {
-    const picked = await open({ directory: true, multiple: true, title: "Chọn thư mục" });
+    const picked = await open({ directory: true, multiple: true, title: "Add folders" });
     if (picked) addPaths(Array.isArray(picked) ? picked : [picked]);
   };
 
@@ -201,7 +202,7 @@ export default function App() {
   const start = async () => {
     if (run.running || files.length === 0) return;
     if (!settings.sameFolder && !settings.outputFolder) {
-      await message('Chọn thư mục output, hoặc tick "Cùng thư mục với file gốc".', { title: APP.title, kind: "warning" });
+      await message('Choose an output folder, or tick "Same folder as input".', { title: APP.title, kind: "warning" });
       return;
     }
     // Check that every file still exists before running.
@@ -216,7 +217,7 @@ export default function App() {
       }),
     );
     if (runnable.length === 0) {
-      await message("Không còn file nào tồn tại trên đĩa.", { title: APP.title, kind: "error" });
+      await message("None of the files exist any more.", { title: APP.title, kind: "error" });
       return;
     }
     if (missing.length > 0) {
@@ -224,15 +225,21 @@ export default function App() {
         .slice(0, 8)
         .map((f) => f.name)
         .join("\n");
-      const go = await ask(`${missing.length} file không còn tồn tại và sẽ được bỏ qua:\n\n${list}${missing.length > 8 ? "\n..." : ""}\n\nChạy tiếp với ${runnable.length} file còn lại?`, {
+      const go = await ask(`${missing.length} file(s) no longer exist and will be skipped:\n\n${list}${missing.length > 8 ? "\n..." : ""}\n\nContinue with the other ${runnable.length}?`, {
         title: APP.title,
         kind: "warning",
       });
       if (!go) return resetQueued();
     }
-    const overwrite = settings.sameFolder && settings.suffix.trim() === "" && !settings.moveOriginal;
-    if (overwrite) {
-      const go = await ask(`${runnable.length} file sẽ bị ghi đè trực tiếp, không giữ bản gốc. Tiếp tục?`, { title: APP.title, kind: "warning" });
+    const sameName = settings.sameFolder && settings.suffix.trim() === "";
+    const toTrash = settings.moveOriginal && settings.originalTarget === "trash";
+    const deleting = settings.moveOriginal && settings.originalTarget === "delete";
+    if ((sameName && !toTrash) || deleting) {
+      const what = sameName ? "will be overwritten in place" : "will be permanently deleted after cleaning";
+      const go = await ask(`The original ${runnable.length === 1 ? "file" : `${runnable.length} files`} ${what}; this cannot be undone. Continue?`, {
+        title: APP.title,
+        kind: "warning",
+      });
       if (!go) return resetQueued();
     }
     runIds.current = runnable.map((f) => f.id);
@@ -271,21 +278,21 @@ export default function App() {
     <div className="app">
       <header className="toolbar">
         <button className="tb" onClick={addFiles} disabled={run.running}>
-          <FilePlus2 size={17} /> Thêm file
+          <FilePlus2 size={17} /> Add files
         </button>
         <button className="tb" onClick={addFolder} disabled={run.running}>
-          <FolderPlus size={17} /> Thêm thư mục
+          <FolderPlus size={17} /> Add folder
         </button>
         <span className="sep" />
         <button className="tb" onClick={removeSelected} disabled={run.running || selected.size === 0}>
-          <CircleMinus size={17} /> Xóa khỏi danh sách
+          <CircleMinus size={17} /> Remove
         </button>
         <button className="tb" onClick={clearAll} disabled={run.running || files.length === 0}>
-          <Trash2 size={17} /> Xóa tất cả
+          <Trash2 size={17} /> Clear
         </button>
         <span className="grow" />
         <span className="muted">
-          {count(files.length)} file • {bytes(totalSize)}
+          {count(files.length)} {files.length === 1 ? "file" : "files"} • {bytes(totalSize)}
         </span>
         <span className="sep" />
         <ThemeSwitch />
@@ -303,19 +310,19 @@ export default function App() {
               <b className="counter">
                 {Math.min(run.done + 1, run.total)}/{run.total}
               </b>
-              {run.stopping ? "Đang dừng sau bước hiện tại..." : currentFile ? currentFile.name : "Đang bắt đầu..."}
+              {run.stopping ? "Stopping after the current step..." : currentFile ? currentFile.name : "Starting..."}
             </>
           ) : (
-            summary || (files.length ? "Sẵn sàng" : "Thêm file để bắt đầu")
+            summary || (files.length ? "Ready" : "Add files to start")
           )}
         </div>
         {run.running ? (
           <button className="btn danger" onClick={stop} disabled={run.stopping}>
-            <Square size={14} fill="currentColor" /> Dừng
+            <Square size={14} fill="currentColor" /> Stop
           </button>
         ) : (
           <button className="btn primary" onClick={start} disabled={files.length === 0}>
-            <Play size={15} fill="currentColor" /> Chạy
+            <Play size={15} fill="currentColor" /> Run
           </button>
         )}
       </footer>
