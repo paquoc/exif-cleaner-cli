@@ -1,5 +1,3 @@
-export type Original = "keep" | "trash" | "delete";
-
 export type FileStatus = "queued" | "idle" | "running" | "cleaned" | "already_clean" | "missing" | "failed" | "cancelled";
 
 export interface Stats {
@@ -19,7 +17,6 @@ export interface FileReport {
   size_before: number;
   size_after: number | null;
   output: string | null;
-  original_moved_to: string | null;
   stats: Stats;
   error: string | null;
   millis: number;
@@ -46,8 +43,6 @@ export interface Settings {
   outputFolder: string;
   keepStructure: boolean;
   suffix: string;
-  moveOriginal: boolean;
-  originalTarget: "trash" | "delete";
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -55,8 +50,6 @@ export const DEFAULT_SETTINGS: Settings = {
   outputFolder: "",
   keepStructure: true,
   suffix: "",
-  moveOriginal: false,
-  originalTarget: "trash",
 };
 
 export type CleanEvent =

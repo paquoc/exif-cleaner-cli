@@ -22,7 +22,6 @@ function subLine(f: FileItem): { text: string; cls: string } {
   if (r?.error) return { text: r.error, cls: "sub-err" };
   if (f.status === "missing") return { text: "The file no longer exists", cls: "sub-err" };
   if (r && r.stats.warnings.length > 0) return { text: `${r.stats.warnings.length} warning(s): ${r.stats.warnings[0]}`, cls: "sub-warn" };
-  if (r?.original_moved_to) return { text: r.original_moved_to === "deleted" ? "Original deleted" : `Original → ${r.original_moved_to}`, cls: "" };
   return { text: f.folder, cls: "" };
 }
 
@@ -33,7 +32,6 @@ function tooltip(f: FileItem): string {
   const skipped = Object.entries(r.stats.skipped_types);
   if (skipped.length) lines.push(`Skipped (not PSD/PSB): ${skipped.map(([k, v]) => `${k} ×${v}`).join(", ")}`);
   if (r.output && r.output !== f.path) lines.push(`Output: ${r.output}`);
-  if (r.original_moved_to) lines.push(r.original_moved_to === "deleted" ? "Original deleted" : `Original → ${r.original_moved_to}`);
   lines.push(...r.stats.warnings.map((w) => `⚠ ${w}`));
   return lines.join("\n");
 }

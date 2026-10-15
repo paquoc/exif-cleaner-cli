@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { CleanEvent, FileReport, Original } from "./types";
+import type { CleanEvent, FileReport } from "./types";
 
 export interface ScannedFile {
   path: string;
@@ -20,7 +20,6 @@ export interface RunOptions {
   outputFolder: string;
   keepStructure: boolean;
   suffix: string;
-  original: Original;
   maxDepth: number;
 }
 

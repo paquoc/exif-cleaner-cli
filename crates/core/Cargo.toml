@@ -14,4 +14,3 @@ thiserror = { workspace = true }
 roxmltree = { workspace = true }
 blake3 = { workspace = true }
 serde = { workspace = true }
-trash = "5"

@@ -407,10 +407,6 @@ table.files {
 .input.narrow {
   width: 96px;
 }
-.input.select {
-  width: auto;
-  flex: 0 0 auto;
-}
 .row-end {
   display: flex;
   justify-content: flex-end;
@@ -431,15 +427,6 @@ table.files {
 }
 .check:has(input:disabled) {
   color: var(--muted);
-}
-.check-row .check {
-  white-space: nowrap;
-}
-.check-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
 }
 hr {
   border: 0;

@@ -21,7 +21,6 @@ function loadSettings(): Settings {
     for (const k of Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[]) {
       if (typeof saved[k] === typeof DEFAULT_SETTINGS[k]) (s as Record<string, unknown>)[k] = saved[k];
     }
-    if (s.originalTarget !== "trash" && s.originalTarget !== "delete") s.originalTarget = DEFAULT_SETTINGS.originalTarget;
     return s;
   } catch {
     return DEFAULT_SETTINGS;
@@ -231,12 +230,8 @@ export default function App() {
       });
       if (!go) return resetQueued();
     }
-    const sameName = settings.sameFolder && settings.suffix.trim() === "";
-    const toTrash = settings.moveOriginal && settings.originalTarget === "trash";
-    const deleting = settings.moveOriginal && settings.originalTarget === "delete";
-    if ((sameName && !toTrash) || deleting) {
-      const what = sameName ? "will be overwritten in place" : "will be permanently deleted after cleaning";
-      const go = await ask(`The original ${runnable.length === 1 ? "file" : `${runnable.length} files`} ${what}; this cannot be undone. Continue?`, {
+    if (settings.sameFolder && settings.suffix.trim() === "") {
+      const go = await ask(`The original ${runnable.length === 1 ? "file" : `${runnable.length} files`} will be overwritten in place; this cannot be undone. Continue?`, {
         title: APP.title,
         kind: "warning",
       });
@@ -255,7 +250,6 @@ export default function App() {
           outputFolder: settings.outputFolder,
           keepStructure: settings.keepStructure,
           suffix: settings.suffix.trim(),
-          original: settings.moveOriginal ? settings.originalTarget : "keep",
           maxDepth: MAX_DEPTH,
         },
       );

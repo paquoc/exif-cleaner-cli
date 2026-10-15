@@ -33,33 +33,12 @@ export function OutputPanel({ settings: s, onSettings: set, locked }: Props) {
             <input type="checkbox" checked={s.keepStructure} disabled={s.sameFolder} onChange={(e) => set({ ...s, keepStructure: e.target.checked })} />
             Keep folder structure
           </label>
-          <div className="check-row">
-            <label className="check">
-              <input type="checkbox" checked={s.moveOriginal} onChange={(e) => set({ ...s, moveOriginal: e.target.checked })} />
-              Original file
-            </label>
-            <select
-              className="input select"
-              value={s.originalTarget}
-              disabled={!s.moveOriginal}
-              onChange={(e) => set({ ...s, originalTarget: e.target.value as Settings["originalTarget"] })}
-            >
-              <option value="trash">To Recycle Bin</option>
-              <option value="delete">Delete permanently</option>
-            </select>
-          </div>
           <hr />
           <label className="lbl" htmlFor="suffix">
             Suffix
           </label>
           <input id="suffix" className="input" value={s.suffix} placeholder="e.g. _clean" onChange={(e) => set({ ...s, suffix: e.target.value })} />
-          {overwrite && (
-            <p className={`hint ${s.moveOriginal && s.originalTarget === "trash" ? "" : "warn-hint"}`}>
-              {s.moveOriginal && s.originalTarget === "trash"
-                ? "The original goes to the Recycle Bin; the cleaned file takes its place."
-                : "Same folder and no suffix: original files will be overwritten."}
-            </p>
-          )}
+          {overwrite && <p className="hint warn-hint">Same folder and no suffix: original files will be overwritten (Date Created is kept). Back them up first if you need them.</p>}
         </div>
       </fieldset>
       <p className="hint about">Removes the XMP property photoshop:DocumentAncestors from PSD/PSB files and every nested PSD/PSB Smart Object, without Photoshop.</p>

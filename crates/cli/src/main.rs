@@ -72,9 +72,6 @@ fn print_report(i: usize, total: usize, r: &FileReport) {
                 let t: Vec<String> = s.skipped_types.iter().map(|(k, v)| format!("{k} x{v}")).collect();
                 println!("      untouched non-PSD smart objects: {}", t.join(", "));
             }
-            if let Some(b) = &r.original_moved_to {
-                println!("      original moved to: {b}");
-            }
             if let (Some(o), false) = (&r.output, r.output.as_ref() == Some(&r.path)) {
                 // A new file was written.
                 println!("      output: {}", o.display());
@@ -117,7 +114,6 @@ fn main() -> ExitCode {
     let plan_for = |task: &job::Task| Plan {
         dry_run: args.dry_run,
         output: if single_file_out { args.output.clone() } else { rule.resolve(task) },
-        original: Default::default(),
     };
     let total = tasks.len();
     let (mut ok, mut failed, mut before, mut after) = (0usize, 0usize, 0u64, 0u64);

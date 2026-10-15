@@ -20,4 +20,4 @@ mod tests;
 
 pub use clean::{Cleaner, Event, Options, Stats};
 pub use error::{Error, Result};
-pub use job::{FileReport, Original, OutputRule, Plan, Status, Task};
+pub use job::{FileReport, OutputRule, Plan, Status, Task};

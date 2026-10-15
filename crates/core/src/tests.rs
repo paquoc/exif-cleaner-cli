@@ -224,7 +224,7 @@ fn events_report_the_tree() {
 
 mod job {
     use super::*;
-    use crate::job::{process, scan, Original, OutputRule, Plan, Status, Task, BACKUP_DIR};
+    use crate::job::{process, scan, OutputRule, Plan, Status, Task};
     use std::fs;
     use std::path::{Path, PathBuf};
 
@@ -244,7 +244,7 @@ mod job {
     }
 
     #[test]
-    fn overwrite_dry_run_missing_and_backup_folder() {
+    fn overwrite_dry_run_and_missing() {
         let d = tmpdir("job");
         let input = tree(false);
         fs::write(d.join("a.psd"), &input).unwrap();
@@ -264,17 +264,10 @@ mod job {
         assert_eq!(r.status, Status::Cleaned, "{:?}", r.error);
         assert_eq!(ancestors(&d.join("a.psd")), 0);
         assert_eq!(r.size_after, Some(fs::metadata(d.join("a.psd")).unwrap().len()));
-        assert!(!d.join(BACKUP_DIR).exists());
         assert_eq!(run(&tasks[0], Plan::default()).status, Status::AlreadyClean);
         assert_eq!(run(&tasks[1], Plan::default()).status, Status::AlreadyClean);
 
-        // Overwrite moving the original to the backup folder.
-        fs::write(d.join("a.psd"), &input).unwrap();
-        let r = run(&tasks[0], Plan { original: Original::BackupFolder, ..Default::default() });
-        assert_eq!(r.status, Status::Cleaned, "{:?}", r.error);
-        assert_eq!(fs::read(d.join(BACKUP_DIR).join("a.psd")).unwrap(), input);
-        assert_eq!(ancestors(&d.join("a.psd")), 0);
-        assert_eq!(scan(&[d.clone()]).len(), 2, "backups are not rescanned");
+        assert_eq!(scan(&[d.clone()]).len(), 2, "nothing else left behind");
 
         fs::remove_file(d.join("a.psd")).unwrap();
         assert_eq!(run(&tasks[0], Plan::default()).status, Status::Missing);
@@ -311,27 +304,35 @@ mod job {
         assert_eq!(ancestors(&d.join("out").join("deep").join("c.psd")), 0);
         assert!(d.join("out").join("clean.psd").exists());
 
-        // New file + move the original to the backup folder.
-        let r = run(c, Plan { output: suffix.resolve(c), original: Original::BackupFolder, ..Default::default() });
-        assert_eq!(r.status, Status::Cleaned, "{:?}", r.error);
-        assert!(!c.path.exists());
-        assert_eq!(fs::read(d.join("in").join("deep").join(BACKUP_DIR).join("c.psd")).unwrap(), input);
-        assert_eq!(ancestors(&d.join("in").join("deep").join("c_clean.psd")), 0);
-
-        // New file + delete the original permanently.
-        fs::write(&c.path, &input).unwrap();
-        let r = run(c, Plan { output: Some(d.join("out").join("del.psd")), original: Original::Delete, ..Default::default() });
-        assert_eq!(r.status, Status::Cleaned, "{:?}", r.error);
-        assert!(!c.path.exists());
-        assert_eq!(r.original_moved_to.as_deref(), Some("deleted"));
-        assert_eq!(ancestors(&d.join("out").join("del.psd")), 0);
-
-        // Overwrite + delete: the original is simply replaced.
-        fs::write(&c.path, &input).unwrap();
-        let r = run(c, Plan { original: Original::Delete, ..Default::default() });
-        assert_eq!(r.status, Status::Cleaned, "{:?}", r.error);
-        assert_eq!(ancestors(&c.path), 0);
         let _ = fs::remove_dir_all(&d);
+    }
+
+    /// Overwriting keeps the original's creation time (only settable on Windows and macOS).
+    #[cfg(any(windows, target_os = "macos"))]
+    #[test]
+    fn overwrite_keeps_creation_time() {
+        let d = tmpdir("created");
+        let p = d.join("a.psd");
+        fs::write(&p, tree(false)).unwrap();
+        let old = std::time::SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(1_500_000_000);
+        set_created(&p, old);
+        let r = run(&scan(std::slice::from_ref(&p))[0], Plan::default());
+        assert_eq!(r.status, Status::Cleaned, "{:?}", r.error);
+        assert_eq!(ancestors(&p), 0);
+        assert_eq!(fs::metadata(&p).unwrap().created().unwrap(), old);
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[cfg(windows)]
+    fn set_created(p: &Path, t: std::time::SystemTime) {
+        use std::os::windows::fs::FileTimesExt;
+        fs::File::options().write(true).open(p).unwrap().set_times(fs::FileTimes::new().set_created(t)).unwrap();
+    }
+
+    #[cfg(target_os = "macos")]
+    fn set_created(p: &Path, t: std::time::SystemTime) {
+        use std::os::macos::fs::FileTimesExt;
+        fs::File::options().write(true).open(p).unwrap().set_times(fs::FileTimes::new().set_created(t)).unwrap();
     }
 
     #[test]

@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::{Duration, Instant};
 
-use exif_cleaner_core::job::{self, Original, OutputRule, Plan, Task};
+use exif_cleaner_core::job::{self, OutputRule, Plan, Task};
 use exif_cleaner_core::{Event, Options};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, State};
@@ -39,7 +39,6 @@ struct RunOptions {
     output_folder: String,
     keep_structure: bool,
     suffix: String,
-    original: Original,
     max_depth: usize,
 }
 
@@ -113,7 +112,7 @@ fn start_run(app: AppHandle, runner: State<'_, Runner>, tasks: Vec<Task>, option
             if cancel.load(Ordering::SeqCst) {
                 break;
             }
-            let plan = Plan { dry_run: options.dry_run, output: rule.resolve(task), original: options.original };
+            let plan = Plan { dry_run: options.dry_run, output: rule.resolve(task) };
             let _ = app.emit("run:file-start", FileStart { index, output: plan.output.clone() });
             // Throttle smart-object notifications: a file can hold thousands.
             let mut last = Instant::now() - Duration::from_secs(1);
