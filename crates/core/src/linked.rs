@@ -3,11 +3,12 @@
 //!
 //! Layout (Adobe "Photoshop File Formats Specification", Linked Layer): a sequence of items, each
 //! a big-endian `u64` length + item data, padded to a multiple of 4. Item: kind (`liFD` embedded,
-//! `liFE` external, `liFA` alias), `u32` version (1–7), Pascal uuid, Unicode file name, file type,
+//! `liFE` external, `liFA` alias), `u32` version (1–8), Pascal uuid, Unicode file name, file type,
 //! creator, `u64` data length, open-descriptor flag (+ versioned descriptor), then for `liFD` the
 //! file bytes, followed by version-specific fields: child document id (v5+, Unicode string),
-//! asset modification time (v6+, 8 bytes), asset lock state (v7+, 1 byte). Any bytes after those
-//! are kept verbatim as extension bytes.
+//! asset modification time (v6+, 8 bytes), asset lock state (v7+, 1 byte), versioned descriptor
+//! holding the `contentID` (v8+, Photoshop 2025 and later). Any bytes after those are kept
+//! verbatim as extension bytes.
 
 use std::ops::Range;
 
@@ -100,7 +101,7 @@ pub fn parse_embedded(block: &[u8], index: usize, item: &RawItem) -> Result<Embe
     let mut r = Rd::new(body, ITEM);
     r.skip(4)?;
     let version = r.u32()?;
-    if !(1..=7).contains(&version) {
+    if !(1..=8).contains(&version) {
         return Err(Error::Unsupported(format!("embedded file record version {version}")));
     }
     let n = r.u8()?;
@@ -124,6 +125,9 @@ pub fn parse_embedded(block: &[u8], index: usize, item: &RawItem) -> Result<Embe
     }
     if version >= 7 {
         r.skip(1)?; // asset locked state
+    }
+    if version >= 8 {
+        descriptor::skip_versioned(&mut r)?; // contentID descriptor
     }
     Ok(Embedded { index, version, uuid, file_name, file_type, data_len_at: base + data_len_at, payload: base + p0..base + p1 })
 }
@@ -216,6 +220,7 @@ pub(crate) mod tests {
         pub child_id: String,
         pub mtime: f64,
         pub locked: u8,
+        pub content: Vec<u8>,
         pub extension: Vec<u8>,
         pub pad: Option<Vec<u8>>,
     }
@@ -232,6 +237,7 @@ pub(crate) mod tests {
                 child_id: "child-doc".into(),
                 mtime: 12345.5,
                 locked: 1,
+                content: crate::descriptor::tests::sample(),
                 extension: vec![],
                 pad: None,
             }
@@ -266,6 +272,9 @@ pub(crate) mod tests {
             if self.version >= 7 {
                 item.push(self.locked);
             }
+            if self.version >= 8 {
+                item.extend(&self.content);
+            }
             item.extend(&self.extension);
             let mut out = (item.len() as u64).to_be_bytes().to_vec();
             out.extend(&item);
@@ -290,7 +299,7 @@ pub(crate) mod tests {
 
     #[test]
     fn replaces_only_the_payload_across_versions_and_sizes() {
-        for version in 1..=7 {
+        for version in 1..=8 {
             for desc in [None, Some(crate::descriptor::tests::sample())] {
                 for old_len in 0..5usize {
                     for new_len in [0usize, 1, 2, 3, 4, 5, 9, 100] {
@@ -368,7 +377,7 @@ pub(crate) mod tests {
             r.kind = kind;
             assert!(replace_embedded_payload(&r.encode(), "e", &[2]).is_err());
         }
-        for version in [0, 8, 99] {
+        for version in [0, 9, 99] {
             let mut r = Rec::new("v", vec![1]);
             r.version = version;
             assert!(replace_embedded_payload(&r.encode(), "v", &[2]).is_err());

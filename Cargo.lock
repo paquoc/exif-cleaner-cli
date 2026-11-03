@@ -1114,7 +1114,7 @@ dependencies = [
 
 [[package]]
 name = "exif-cleaner"
-version = "1.0.0"
+version = "1.0.2"
 dependencies = [
  "clap",
  "ctrlc",
@@ -1124,7 +1124,7 @@ dependencies = [
 
 [[package]]
 name = "exif-cleaner-app"
-version = "1.0.0"
+version = "1.0.2"
 dependencies = [
  "exif-cleaner-core",
  "serde",
@@ -1137,7 +1137,7 @@ dependencies = [
 
 [[package]]
 name = "exif-cleaner-core"
-version = "1.0.0"
+version = "1.0.2"
 dependencies = [
  "blake3",
  "roxmltree",

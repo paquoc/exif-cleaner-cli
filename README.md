@@ -29,7 +29,7 @@ Thêm file/thư mục (nút, kéo thả, hoặc kéo file vào icon exe), bấm 
 
 - `crates/core`: đọc file theo section (header, resources, layer & mask, image data) và chỉ ghi lại resource XMP 1060 cùng các block `lnk2`/`lnk3`/`lnkD` chứa smart object đã đổi. Layer record, channel data và merged image được copy nguyên byte, không decode hay nén lại.
 - XMP: định vị property theo namespace `http://ns.adobe.com/photoshop/1.0/` (roxmltree), rồi cắt đúng đoạn byte đó; metadata khác giữ nguyên.
-- Smart object: `liFD` v1–7. Chỉ thay payload, data length, item length, và padding khi alignment đổi. UUID, tên, descriptor và các trường suffix (child id, mtime, lock, extension) giữ nguyên byte.
+- Smart object: `liFD` v1–8. Chỉ thay payload, data length, item length, và padding khi alignment đổi. UUID, tên, descriptor và các trường suffix (child id, mtime, lock, contentID, extension) giữ nguyên byte.
 - Smart object trùng nội dung (blake3) chỉ clean một lần. Smart object không phải PSD/PSB (PNG, JPEG, AI, PDF...) và linked file ngoài (`lnkE`) để nguyên.
 - File đã sạch sẵn: ghi đè thì không đụng tới; ghi ra đường dẫn mới thì copy nguyên.
 - Trước khi ghi: parse lại toàn bộ cây output, yêu cầu không lỗi và không còn ancestors. Ghi qua file tạm rồi rename. Nếu file bị sửa trên đĩa trong lúc clean thì không ghi.
