@@ -62,8 +62,13 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Signs the installer for the in-app updater; tauri-action then attaches the .sig and latest.json.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: app
+          args: --config src-tauri/tauri.release.conf.json
+          includeUpdaterJson: true
           tagName: ${{ env.IS_TAG == 'true' && github.ref_name || '' }}
           releaseName: Exif Cleaner PSD ${{ github.ref_name }}
           releaseBody: |

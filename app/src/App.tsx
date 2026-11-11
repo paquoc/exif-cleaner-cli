@@ -4,6 +4,7 @@ import { ask, message, open } from "@tauri-apps/plugin-dialog";
 import { checkFiles, initialPaths, listenRun, scanPaths, startRun, stopRun, type ScannedFile } from "./api";
 import { FileTable } from "./FileTable";
 import { OutputPanel } from "./OutputPanel";
+import { UpdateBar } from "./UpdateBar";
 import { bytes, count, splitPath } from "./format";
 import { CircleMinus, FilePlus2, FolderPlus, Play, Square, Trash2 } from "lucide-react";
 import { ThemeSwitch } from "./theme";
@@ -47,6 +48,8 @@ export default function App() {
   const [run, setRun] = useState<RunState>(IDLE);
   const [summary, setSummary] = useState<string>("");
   const [dragOver, setDragOver] = useState(false);
+  // An update is downloading; the installer will close the app, so no new run may start.
+  const [updating, setUpdating] = useState(false);
   const runIds = useRef<string[]>([]);
   const results = useRef<FileReport[]>([]);
   const runningRef = useRef(false);
@@ -199,7 +202,7 @@ export default function App() {
   const resetQueued = () => setFiles((fs) => fs.map((f) => (f.status === "queued" ? { ...f, status: "idle" } : f)));
 
   const start = async () => {
-    if (run.running || files.length === 0) return;
+    if (run.running || updating || files.length === 0) return;
     if (!settings.sameFolder && !settings.outputFolder) {
       await message('Choose an output folder, or tick "Same folder as input".', { title: APP.title, kind: "warning" });
       return;
@@ -292,6 +295,8 @@ export default function App() {
         <ThemeSwitch />
       </header>
 
+      <UpdateBar busy={run.running} onUpdating={setUpdating} />
+
       <main className="main">
         <FileTable files={files} selected={selected} dragOver={dragOver} onSelect={setSelected} />
         <OutputPanel settings={settings} onSettings={setSettings} locked={run.running} />
@@ -315,7 +320,7 @@ export default function App() {
             <Square size={14} fill="currentColor" /> Stop
           </button>
         ) : (
-          <button className="btn primary" onClick={start} disabled={files.length === 0}>
+          <button className="btn primary" onClick={start} disabled={updating || files.length === 0}>
             <Play size={15} fill="currentColor" /> Run
           </button>
         )}

@@ -91,8 +91,8 @@ select {
 }
 
 .app {
-  display: grid;
-  grid-template-rows: auto 1fr auto;
+  display: flex;
+  flex-direction: column;
   height: 100%;
 }
 
@@ -137,6 +137,7 @@ select {
 
 /* Main split */
 .main {
+  flex: 1;
   display: grid;
   grid-template-columns: 1fr 300px;
   min-height: 0;
@@ -538,4 +539,40 @@ hr {
   background: var(--panel);
   color: var(--accent);
   box-shadow: 0 0 0 1px var(--border);
+}
+
+.update-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--border);
+}
+.update-text {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.update-text.err {
+  color: var(--err);
+}
+.btn.primary-soft {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.update-progress {
+  flex: 0 0 200px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  overflow: hidden;
+}
+.update-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s;
 }

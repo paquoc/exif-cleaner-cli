@@ -143,10 +143,18 @@ fn stop_run(runner: State<'_, Runner>) {
     }
 }
 
+/// Whether this exe was put there by the NSIS installer, which leaves `uninstall.exe` beside it. Only an
+/// installed copy can update itself; the installer would not replace a portable exe.
+#[tauri::command]
+fn is_installed() -> bool {
+    std::env::current_exe().ok().and_then(|exe| exe.parent().map(|dir| dir.join("uninstall.exe").is_file())).unwrap_or(false)
+}
+
 fn main() {
     let result = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(Runner::default())
         .setup(|app| {
             let title = format!("{} v{}", app.package_info().name, app.package_info().version);
@@ -155,7 +163,7 @@ fn main() {
             }
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![initial_paths, scan_paths, check_files, start_run, stop_run])
+        .invoke_handler(tauri::generate_handler![initial_paths, scan_paths, check_files, start_run, stop_run, is_installed])
         .run(tauri::generate_context!());
     if let Err(e) = result {
         eprintln!("Exif Cleaner PSD failed to start: {e}");

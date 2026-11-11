@@ -28,6 +28,7 @@ export const scanPaths = (paths: string[]) => invoke<ScannedFile[]>("scan_paths"
 export const checkFiles = (paths: string[]) => invoke<FileCheck[]>("check_files", { paths });
 export const startRun = (tasks: { path: string; rel: string }[], options: RunOptions) => invoke<void>("start_run", { tasks, options });
 export const stopRun = () => invoke<void>("stop_run");
+export const isInstalled = () => invoke<boolean>("is_installed");
 
 export interface RunHandlers {
   onFileStart(index: number, output: string | null): void;

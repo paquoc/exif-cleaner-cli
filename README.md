@@ -47,3 +47,9 @@ git push origin v1.0.0
 ```
 
 GitHub Actions ([.github/workflows/release.yml](.github/workflows/release.yml)) build trên Windows, kiểm tra tag khớp version, chạy test, rồi tạo release kèm bộ cài, bản portable và CLI. Chạy tay (Actions > Release > Run workflow) để build thử mà không publish; file nằm trong artifact của lần chạy đó.
+
+### Tự cập nhật
+
+Khi mở, app đọc `latest.json` của release mới nhất. Có bản mới thì hiện thanh thông báo: bản cài (NSIS) bấm "Update and restart" để tải bộ cài mới, kiểm chữ ký, cài đè rồi mở lại; bản portable chỉ có nút mở trang release. Đang chạy clean thì không cập nhật được.
+
+CI ký bộ cài bằng khóa minisign và đính `.sig` + `latest.json` vào release ([tauri.release.conf.json](app/src-tauri/tauri.release.conf.json) bật `createUpdaterArtifacts`). Public key nằm trong [tauri.conf.json](app/src-tauri/tauri.conf.json) (`plugins.updater.pubkey`); private key cần ở secret `TAURI_SIGNING_PRIVATE_KEY` (và `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`). Mất private key thì các bản đã cài không nhận update được nữa, phải cài lại tay. Build ở máy (`npx tauri build`) không cần khóa.
